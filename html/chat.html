@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .container {
+        width: 80%;
+        margin: 0 auto;
+      }
+      .chat-list {
+        width: 100%;
+        height: 150px;
+        padding: 5px 10px;
+        overflow: hidden;
+        overflow-y: scroll;
+        border: 1px solid black;
+      }
+      p {
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="chat-list" id="chatList"></div>
+      <div class="input">
+        <input type="text" id="user" value="" placeholder="이름"/>
+        <input type="text" id="text" value="" placeholder="내용"/>
+        <button id="btn-send">chat</button>
+      </div>
+    </div>
+    <script>
+      document.querySelector("#btn-send").addEventListener("click", () => {
+        let _user = document.querySelector("#user").value;
+        let _text = document.querySelector("#text").value;
+        if (_user === "") {
+          alert("이름이 입력되지 않았습니다");
+          return;
+        }
+        if (_text === "") {
+          alert("내용이 입력되지 않았습니다");
+          return;
+        }
+        let data = _user + ":" + _text;
+        fetch("http://localhost:8080/send?user=" + _user + "&text=" + _text)
+          .then((res) => res.text())
+          .then((res) => {
+            let element_p = document.createElement("p");
+            element_p.textContent = `${_user} : ${_text}`;
+            chatList.appendChild(element_p);
+            document.querySelector("#text").value = "";
+          });
+      });
+
+      const chatList = document.querySelector("#chatList");
+      const eventSource = new EventSource(`http://localhost:8080/oshchat`);
+      eventSource.onmessage = (event) => {
+        let _user = document.querySelector("#user").value;
+        let parse = event.data.split(" : ");
+        if (parse[0] !== _user) {
+          let element_p = document.createElement("p");
+          element_p.textContent = event.data;
+          chatList.appendChild(element_p);
+        }
+      };
+      eventSource.onerror = (error) => {
+        eventSource.close();
+      };
+    </script>
+  </body>
+</html>
